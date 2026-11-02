@@ -1,1074 +1,614 @@
-'use client';
-
-import React, { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
-import {
-  Download,
-  ShieldCheck,
-  ShieldAlert,
-  Terminal,
-  Database,
-  Sparkles,
-  Zap,
-  Cpu,
-  Github,
-  ChevronDown,
-  ExternalLink,
-  Check,
-  Layers,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  Play,
-  FileSpreadsheet,
-  Lock,
-  HardDrive,
-  Copy,
+import React from 'react';
+import Link from 'next/link';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import DesktopWindow from '../components/DesktopWindow';
+import CreatorSection from '../components/CreatorSection';
+import { 
+  Download, 
+  Terminal, 
+  Database, 
+  Sparkles, 
+  ShieldCheck, 
+  Layers, 
+  ArrowRight, 
+  CheckCircle2, 
+  HardDrive, 
+  Server, 
+  FileSpreadsheet, 
+  Play, 
+  Check, 
+  Copy, 
+  EyeOff, 
+  Cpu, 
+  Zap, 
+  Lock, 
+  Code2, 
+  Sliders, 
+  HelpCircle,
+  AlertTriangle,
   Table,
-  Workflow,
-  Server,
-  Activity,
-  Code2,
-  RefreshCw,
-  Info,
-  Sliders,
-  CheckCircle2
+  Workflow
 } from 'lucide-react';
 
-interface ReleaseAsset {
-  name: string;
-  browser_download_url: string;
-  size: number;
-  digest?: string;
-}
+export const metadata = {
+  title: 'zero-sql — The Modern Database Studio with Local AI',
+  description: 'Fast, privacy-first desktop database client for SQLite, DuckDB, PostgreSQL, MySQL, and SQL Server. Write natural language questions, synthesize safe SQL, and explore schemas 100% offline.',
+};
 
-interface ReleaseData {
-  tag_name: string;
-  name: string;
-  published_at: string;
-  body: string;
-  html_url: string;
-  assets: ReleaseAsset[];
-}
-
-const FALLBACK_RELEASES_URL = 'https://github.com/LochanJangid/zero_sql/releases';
-const FALLBACK_REPO_URL = 'https://github.com/LochanJangid/zero_sql';
-const CACHE_KEY = 'zerosql_latest_release_v2';
-const CACHE_EXPIRY_MS = 15 * 60 * 1000;
-
-interface DemoDatabase {
-  id: string;
-  name: string;
-  dialect: string;
-  badge: string;
-  sampleQuestions: {
-    question: string;
-    sql: string;
-    explanation: string;
-    columns: string[];
-    rows: any[][];
-    executionTimeMs: number;
-    rowsScanned: number;
-  }[];
-  schema: {
-    tables: {
-      name: string;
-      columns: { name: string; type: string; isPk?: boolean; isFk?: boolean }[];
-    }[];
-  };
-}
-
-const DEMO_DATABASES: DemoDatabase[] = [
-  {
-    id: 'sqlite',
-    name: 'shop.db (E-commerce)',
-    dialect: 'SQLite 3.45',
-    badge: 'Offline Bundled',
-    sampleQuestions: [
-      {
-        question: 'Top 5 highest spending customers in London with total orders',
-        sql: `SELECT 
-  c.name AS customer_name,
-  c.email,
-  COUNT(o.id) AS total_orders,
-  ROUND(SUM(o.total_amount), 2) AS total_spent
-FROM customers c
-JOIN orders o ON c.id = o.customer_id
-WHERE c.city = 'London'
-GROUP BY c.id
-ORDER BY total_spent DESC
-LIMIT 5;`,
-        explanation: 'Aggregates customer spend in London by joining customers and orders, grouping by customer ID with descending total amount.',
-        columns: ['customer_name', 'email', 'total_orders', 'total_spent'],
-        rows: [
-          ['Jordan Miller', 'jordan.miller14@example.com', 7, 4829.40],
-          ['Finley Perez', 'finley.perez44@example.com', 6, 3912.15],
-          ['Casey Taylor', 'casey.taylor24@example.com', 5, 3420.80],
-          ['Alex Smith', 'alex.smith04@example.com', 4, 2890.50],
-          ['Riley Davis', 'riley.davis64@example.com', 4, 2715.00],
-        ],
-        executionTimeMs: 2.8,
-        rowsScanned: 1800,
-      },
-      {
-        question: 'Products with stock under 30 that generated over $2,000 in sales',
-        sql: `SELECT 
-  p.name AS product_name,
-  p.category,
-  p.stock,
-  p.price,
-  SUM(oi.quantity * oi.unit_price) AS gross_revenue
-FROM products p
-JOIN order_items oi ON p.id = oi.product_id
-WHERE p.stock < 30
-GROUP BY p.id
-HAVING gross_revenue > 2000
-ORDER BY gross_revenue DESC;`,
-        explanation: 'Filters inventory below 30 units and aggregates order item totals exceeding $2,000 threshold.',
-        columns: ['product_name', 'category', 'stock', 'price', 'gross_revenue'],
-        rows: [
-          ['Wireless Mechanical Keyboard', 'Accessories', 14, 149.99, 5849.61],
-          ['Ultra Noise-Cancelling Headphones', 'Audio', 18, 289.00, 5202.00],
-          ['Smart 4K Webcam Pro', 'Electronics', 22, 119.50, 3824.00],
-          ['Ergonomic Laptop Dock', 'Home Office', 12, 189.00, 3024.00],
-        ],
-        executionTimeMs: 3.4,
-        rowsScanned: 3500,
-      },
-    ],
-    schema: {
-      tables: [
-        {
-          name: 'customers',
-          columns: [
-            { name: 'id', type: 'INTEGER', isPk: true },
-            { name: 'name', type: 'TEXT' },
-            { name: 'email', type: 'TEXT' },
-            { name: 'city', type: 'TEXT' },
-            { name: 'country', type: 'TEXT' },
-          ],
-        },
-        {
-          name: 'orders',
-          columns: [
-            { name: 'id', type: 'INTEGER', isPk: true },
-            { name: 'customer_id', type: 'INTEGER', isFk: true },
-            { name: 'order_date', type: 'TEXT' },
-            { name: 'status', type: 'TEXT' },
-            { name: 'total_amount', type: 'REAL' },
-          ],
-        },
-        {
-          name: 'order_items',
-          columns: [
-            { name: 'id', type: 'INTEGER', isPk: true },
-            { name: 'order_id', type: 'INTEGER', isFk: true },
-            { name: 'product_id', type: 'INTEGER', isFk: true },
-            { name: 'quantity', type: 'INTEGER' },
-            { name: 'unit_price', type: 'REAL' },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    id: 'postgres',
-    name: 'analytics_prod (PostgreSQL 16)',
-    dialect: 'PostgreSQL 16.2',
-    badge: 'Enterprise Pool',
-    sampleQuestions: [
-      {
-        question: 'Daily active users and 7-day rolling retention rate for October',
-        sql: `SELECT 
-  DATE_TRUNC('day', event_time) AS event_date,
-  COUNT(DISTINCT user_id) AS dau,
-  ROUND(
-    AVG(COUNT(DISTINCT user_id)) OVER (
-      ORDER BY DATE_TRUNC('day', event_time) 
-      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-    ), 0
-  ) AS rolling_7d_avg
-FROM user_events
-WHERE event_time >= '2024-10-01' AND event_time < '2024-11-01'
-GROUP BY 1
-ORDER BY 1 ASC;`,
-        explanation: 'Calculates daily distinct active users and computes a 7-day moving window average using window functions.',
-        columns: ['event_date', 'dau', 'rolling_7d_avg'],
-        rows: [
-          ['2024-10-01 00:00:00', 14210, 14210],
-          ['2024-10-02 00:00:00', 15890, 15050],
-          ['2024-10-03 00:00:00', 16240, 15446],
-          ['2024-10-04 00:00:00', 17820, 16040],
-          ['2024-10-05 00:00:00', 18450, 16522],
-        ],
-        executionTimeMs: 4.9,
-        rowsScanned: 142000,
-      },
-    ],
-    schema: {
-      tables: [
-        {
-          name: 'user_events',
-          columns: [
-            { name: 'id', type: 'UUID', isPk: true },
-            { name: 'user_id', type: 'UUID' },
-            { name: 'event_type', type: 'VARCHAR(64)' },
-            { name: 'event_time', type: 'TIMESTAMPTZ' },
-            { name: 'metadata', type: 'JSONB' },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    id: 'duckdb',
-    name: 'telemetry (DuckDB / Parquet)',
-    dialect: 'DuckDB 0.10',
-    badge: 'Columnar File Engine',
-    sampleQuestions: [
-      {
-        question: 'P99 and P95 latency by microservice from 100M telemetry events',
-        sql: `SELECT 
-  service_name,
-  COUNT(*) AS request_count,
-  ROUND(QUANTILE_CONT(duration_ms, 0.95), 2) AS p95_ms,
-  ROUND(QUANTILE_CONT(duration_ms, 0.99), 2) AS p99_ms
-FROM read_parquet('telemetry_2024_*.parquet')
-WHERE status_code >= 200
-GROUP BY service_name
-ORDER BY p99_ms DESC;`,
-        explanation: 'Computes exact 95th and 99th continuous percentile latencies directly against partitioned Parquet files.',
-        columns: ['service_name', 'request_count', 'p95_ms', 'p99_ms'],
-        rows: [
-          ['billing-checkout-api', 1420500, 84.20, 192.50],
-          ['auth-token-verifier', 4820100, 12.40, 48.90],
-          ['catalog-search-service', 3120400, 34.80, 112.10],
-          ['notification-dispatcher', 980200, 18.10, 62.40],
-        ],
-        executionTimeMs: 6.2,
-        rowsScanned: 10340000,
-      },
-    ],
-    schema: {
-      tables: [
-        {
-          name: 'telemetry_parquet',
-          columns: [
-            { name: 'timestamp', type: 'TIMESTAMP' },
-            { name: 'service_name', type: 'VARCHAR' },
-            { name: 'duration_ms', type: 'DOUBLE' },
-            { name: 'status_code', type: 'INTEGER' },
-          ],
-        },
-      ],
-    },
-  },
-];
-
-export default function Home() {
-  const [release, setRelease] = useState<ReleaseData | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState<string>(FALLBACK_RELEASES_URL);
-  const [version, setVersion] = useState<string>('v0.1.2');
-  const [fileSizeMb, setFileSizeMb] = useState<string>('219 MB');
-  const [sha256Hash, setSha256Hash] = useState<string>('c5c672bcf077ce1091a51c6e11b3a7e485a71903e6354fbb0c4c67a73e638b5e');
-  const [copiedHash, setCopiedHash] = useState(false);
-  const [copiedInstallCmd, setCopiedInstallCmd] = useState(false);
-
-  // Playground States
-  const [activeDbId, setActiveDbId] = useState<string>('sqlite');
-  const [activeQuestionIdx, setActiveQuestionIdx] = useState<number>(0);
-  const [playgroundTab, setPlaygroundTab] = useState<'editor' | 'results' | 'explain' | 'erd'>('editor');
-  const [isScreenShareMasked, setIsScreenShareMasked] = useState<boolean>(false);
-  const [isExecutingQuery, setIsExecutingQuery] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const activeDb = useMemo(
-    () => DEMO_DATABASES.find((d) => d.id === activeDbId) || DEMO_DATABASES[0],
-    [activeDbId]
-  );
-  const activeQuestion = useMemo(
-    () => activeDb.sampleQuestions[activeQuestionIdx] || activeDb.sampleQuestions[0],
-    [activeDb, activeQuestionIdx]
-  );
-
-  useEffect(() => {
-    async function fetchRelease() {
-      try {
-        const cachedRaw = sessionStorage.getItem(CACHE_KEY);
-        if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw);
-          if (Date.now() - cached.timestamp < CACHE_EXPIRY_MS) {
-            applyReleaseData(cached.data);
-            return;
-          }
-        }
-      } catch {}
-
-      try {
-        const res = await fetch('https://api.github.com/repos/LochanJangid/zero_sql/releases/latest');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: ReleaseData = await res.json();
-        try {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
-        } catch {}
-        applyReleaseData(data);
-      } catch (err) {
-        setDownloadUrl('https://github.com/LochanJangid/zero_sql/releases/download/v0.1.2/zero-sql-Setup-0.1.2-x64.exe');
-      }
-    }
-
-    fetchRelease();
-  }, []);
-
-  function applyReleaseData(data: ReleaseData) {
-    setRelease(data);
-    if (data.tag_name) setVersion(data.tag_name);
-    if (data.assets && Array.isArray(data.assets)) {
-      const x64Asset = data.assets.find(
-        (a) => a.name.endsWith('.exe') && (a.name.includes('x64') || !a.name.includes('arm64'))
-      );
-      if (x64Asset) {
-        setDownloadUrl(x64Asset.browser_download_url);
-        if (x64Asset.size) {
-          setFileSizeMb(`${Math.round(x64Asset.size / (1024 * 1024))} MB`);
-        }
-        if (x64Asset.digest) {
-          setSha256Hash(x64Asset.digest.replace(/^sha256:/, ''));
-        }
-      }
-    }
-  }
-
-  const triggerToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const copyChecksum = () => {
-    navigator.clipboard.writeText(sha256Hash);
-    setCopiedHash(true);
-    triggerToast('SHA-256 Checksum copied to clipboard');
-    setTimeout(() => setCopiedHash(false), 2000);
-  };
-
-  const copyPowerShellCmd = () => {
-    const cmd = `irm "${downloadUrl}" -OutFile zero-sql-Setup.exe; .\\zero-sql-Setup.exe`;
-    navigator.clipboard.writeText(cmd);
-    setCopiedInstallCmd(true);
-    triggerToast('PowerShell install command copied');
-    setTimeout(() => setCopiedInstallCmd(false), 2000);
-  };
-
-  const handleSimulateRun = () => {
-    setIsExecutingQuery(true);
-    setTimeout(() => {
-      setIsExecutingQuery(false);
-      setPlaygroundTab('results');
-      triggerToast(`Query executed in ${activeQuestion.executionTimeMs} ms (100% offline)`);
-    }, 350);
-  };
-
+export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#090a0d] text-[#e1e4ea] selection:bg-[#c4f20f] selection:text-[#0a0f02] antialiased">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#1a1d24] border border-[#c4f20f]/30 text-white text-xs shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <CheckCircle2 size={15} className="text-[#c4f20f]" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div className="min-h-screen bg-[#0d0e11] text-slate-100 selection:bg-emerald-500/30 selection:text-white">
+      {/* Section 1: Navigation */}
+      <Navbar currentPath="/" />
 
-      {/* Top Banner: Enterprise Zero-Cloud Guarantee */}
-      <div className="w-full bg-gradient-to-r from-[#12150a] via-[#1a2307] to-[#12150a] border-b border-[#c4f20f]/20 py-2 px-4 text-center text-[12px] text-neutral-300 flex items-center justify-center space-x-2">
-        <ShieldCheck size={14} className="text-[#c4f20f] shrink-0" />
-        <span>
-          <strong>Zero Cloud Telemetry</strong>: Database credentials and schemas never leave your workstation.
-        </span>
-        <span className="hidden md:inline text-neutral-500">•</span>
-        <span className="hidden md:inline text-neutral-400">SOC-2 & Air-Gap Ready Architecture</span>
-      </div>
+      {/* Section 2: Hero */}
+      <section className="relative pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center space-y-8 overflow-hidden">
+        {/* Soft background ambient glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-emerald-500/10 via-blue-500/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* Navigation */}
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#090a0d]/85 border-b border-white/5 transition-all">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Image
-              src="/logo-full.png"
-              alt="zero-sql"
-              width={145}
-              height={34}
-              priority
-              className="h-8 w-auto object-contain"
-            />
-            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#1a1f0a] text-[#c4f20f] border border-[#c4f20f]/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#c4f20f] animate-pulse" />
-              <span>{version}</span>
-            </div>
+        <div className="relative z-10 space-y-6 max-w-4xl mx-auto">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wide uppercase shadow-sm">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>The Modern Database Studio with Local AI</span>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-6 text-xs font-medium text-neutral-400">
-            <a href="#playground" className="hover:text-white transition-colors">Interactive Demo</a>
-            <a href="#enterprise" className="hover:text-white transition-colors">Architecture</a>
-            <a href="#matrix" className="hover:text-white transition-colors">Comparison</a>
-            <a href="#smartscreen" className="hover:text-white transition-colors">SmartScreen Guide</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-          </nav>
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.1]">
+            The SQL Editor and Database Manager You&apos;ll <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-400 bg-clip-text text-transparent">Actually Enjoy</span> Using.
+          </h1>
 
-          <div className="flex items-center space-x-3">
-            <a
-              href={FALLBACK_REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-1.5 text-xs text-neutral-300 hover:text-white px-3 py-1.5 rounded-lg bg-[#14161c] border border-white/10 hover:border-white/20 transition-all"
+          {/* Subtitle */}
+          <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 leading-relaxed">
+            Connect to SQLite, DuckDB, PostgreSQL, MySQL, SQL Server, and CSV files. 
+            Ask questions in plain English, synthesize safe SQL, inspect execution plans, and explore schemas — 100% offline on your desktop.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <Link
+              href="/download"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-xl shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Github size={14} />
-              <span>GitHub</span>
-            </a>
+              <Download className="w-4 h-4 stroke-[2.5]" />
+              <span>Download Free for Windows</span>
+            </Link>
 
-            <a
-              href={downloadUrl}
-              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg font-medium text-xs bg-[#c4f20f] text-[#12150a] hover:bg-[#d4ff26] shadow-sm hover:shadow-[#c4f20f]/20 transition-all font-semibold"
+            <Link
+              href="/product"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold text-sm border border-white/10 transition-colors"
             >
-              <Download size={13} />
-              <span>Download</span>
-            </a>
+              <span>Explore Product Tour</span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </Link>
+          </div>
+
+          {/* Specs & Trust Stats */}
+          <div className="pt-6 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-mono text-slate-400">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>Windows 10/11 x64</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+              <span>Zero Host Python/Node Needed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              <span>100% Offline & Private</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span>Open Source (ISC)</span>
+            </div>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="flex-1">
-        {/* HERO SECTION */}
-        <section className="relative pt-20 pb-24 px-6 overflow-hidden">
-          {/* Ambient Radial Lights */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-[#c4f20f]/10 rounded-full blur-[150px] pointer-events-none -z-10" />
-          <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] bg-sky-500/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+      {/* Section 3: Product Showcase (Centerpiece Desktop Studio) */}
+      <section className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <DesktopWindow />
+      </section>
 
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#12141a] border border-white/10 text-xs text-neutral-300 shadow-inner">
-              <Sparkles size={13} className="text-[#c4f20f]" />
-              <span>PyInstaller Frozen Standalone Engine • No Python or Pip Required</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.08]">
-              The Enterprise SQL Studio <br />
-              <span className="bg-gradient-to-r from-white via-neutral-200 to-[#c4f20f] bg-clip-text text-transparent">
-                That Never Leaks Data.
-              </span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-              Query PostgreSQL, MySQL, SQLite, DuckDB, and Parquet spreadsheets with plain English. Powered by sub-millisecond local RAG, AST transaction safety guards, and 100% offline executable execution.
-            </p>
-
-            {/* CTA BUTTONS & INSTALLER HUB */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href={downloadUrl}
-                className="group relative inline-flex items-center justify-center space-x-3 px-8 py-4 rounded-xl font-bold text-sm bg-[#c4f20f] text-[#0e1702] hover:bg-[#d6ff3d] shadow-[0_0_30px_rgba(196,242,15,0.35)] transition-all hover:scale-[1.02] active:scale-[0.99] w-full sm:w-auto"
-              >
-                <Download size={18} className="group-hover:translate-y-0.5 transition-transform" />
-                <div className="text-left">
-                  <div className="font-extrabold leading-none">Download for Windows</div>
-                  <div className="text-[11px] opacity-80 font-mono mt-0.5">
-                    {version} • x64 ({fileSizeMb})
-                  </div>
-                </div>
-              </a>
-
-              <a
-                href="#playground"
-                className="inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-xl font-medium text-sm bg-[#15171f] text-neutral-200 hover:text-white border border-white/10 hover:border-white/20 hover:bg-[#1a1d26] transition-all w-full sm:w-auto"
-              >
-                <Play size={15} className="text-[#c4f20f]" />
-                <span>Try Interactive Studio Demo</span>
-              </a>
-            </div>
-
-            {/* Quick Checksum & PowerShell Pill */}
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs text-neutral-400">
-              <button
-                onClick={copyChecksum}
-                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-md bg-[#12141a] border border-white/5 hover:border-white/15 transition-all font-mono text-[11px]"
-                title="Click to copy SHA-256 Checksum"
-              >
-                <Lock size={11} className="text-[#c4f20f]" />
-                <span>SHA-256: {sha256Hash.slice(0, 12)}...</span>
-                <Copy size={11} className="text-neutral-500" />
-              </button>
-
-              <button
-                onClick={copyPowerShellCmd}
-                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-md bg-[#12141a] border border-white/5 hover:border-white/15 transition-all font-mono text-[11px]"
-                title="Click to copy PowerShell install script"
-              >
-                <Terminal size={11} className="text-sky-400" />
-                <span>PowerShell Script</span>
-                <Copy size={11} className="text-neutral-500" />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* INTERACTIVE PLAYGROUND (PLAYFUL & ENTERPRISE) */}
-        <section id="playground" className="py-16 px-6 max-w-6xl mx-auto">
-          <div className="text-center space-y-3 mb-10">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#15171f] border border-white/10 text-xs text-[#c4f20f]">
-              <Activity size={13} />
-              <span>Real-Time Browser Simulation</span>
-            </div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
-              Test-Drive zero-sql Interactively
+      {/* Section 4: Supported Databases */}
+      <section className="py-24 border-t border-white/5 bg-[#0b0c0f]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Compatibility</div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              One Studio for All Your Data Engines
             </h2>
-            <p className="text-sm text-neutral-400 max-w-xl mx-auto">
-              Select an engine, click natural language prompts, inspect synthesized SQL, and execute offline queries in milliseconds.
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Native drivers and dialect adapters tuned for high-throughput introspection and execution.
             </p>
           </div>
 
-          {/* PLAYGROUND WINDOW CONTAINER */}
-          <div className="rounded-2xl bg-[#0e1015] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-            {/* Window Chrome TopBar */}
-            <div className="h-11 bg-[#13151b] border-b border-white/5 px-4 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="ml-3 text-xs font-mono text-neutral-400 font-medium">
-                  zero-sql studio • {activeDb.name}
-                </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 text-center space-y-3 hover:border-emerald-500/30 transition-all group">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <HardDrive className="w-6 h-6" />
               </div>
-
-              {/* Screen Share Masking Switch */}
-              <button
-                onClick={() => {
-                  setIsScreenShareMasked(!isScreenShareMasked);
-                  triggerToast(
-                    !isScreenShareMasked
-                      ? 'Screen-Share Mode: All values masked'
-                      : 'Screen-Share Mode: Disabled'
-                  );
-                }}
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                  isScreenShareMasked
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    : 'bg-[#1c1f28] text-neutral-400 hover:text-white border border-white/5'
-                }`}
-                title="Toggle real-time sensitive column masking"
-              >
-                {isScreenShareMasked ? <EyeOff size={13} /> : <Eye size={13} />}
-                <span>{isScreenShareMasked ? 'Masked (Live)' : 'Screen-Share Shield'}</span>
-              </button>
-            </div>
-
-            {/* Dialect Switcher Toolbar */}
-            <div className="p-3 bg-[#111319] border-b border-white/5 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-neutral-500 font-medium mr-1">Database:</span>
-                {DEMO_DATABASES.map((db) => (
-                  <button
-                    key={db.id}
-                    onClick={() => {
-                      setActiveDbId(db.id);
-                      setActiveQuestionIdx(0);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeDbId === db.id
-                        ? 'bg-[#c4f20f] text-[#0e1702] font-semibold shadow-sm'
-                        : 'bg-[#181a22] text-neutral-400 hover:text-white border border-white/5'
-                    }`}
-                  >
-                    {db.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="text-[11px] font-mono text-neutral-400 px-2 py-0.5 rounded bg-[#171a22] border border-white/5">
-                  {activeDb.badge}
-                </span>
+              <div>
+                <h3 className="font-bold text-white text-sm">SQLite</h3>
+                <div className="text-[11px] font-mono text-slate-400">.db • WAL Mode</div>
               </div>
             </div>
 
-            {/* Prompt Selector Pills */}
-            <div className="p-3 bg-[#0d0e13] border-b border-white/5 flex items-center space-x-2 overflow-x-auto text-xs">
-              <span className="text-neutral-500 shrink-0 font-medium text-[11px]">Sample Prompts:</span>
-              {activeDb.sampleQuestions.map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setActiveQuestionIdx(idx);
-                    setPlaygroundTab('editor');
-                  }}
-                  className={`px-3 py-1 rounded-full whitespace-nowrap text-xs transition-all ${
-                    activeQuestionIdx === idx
-                      ? 'bg-[#1f2410] text-[#c4f20f] border border-[#c4f20f]/40 font-medium'
-                      : 'bg-[#14161d] text-neutral-400 hover:text-white border border-white/5'
-                  }`}
-                >
-                  "{q.question}"
-                </button>
-              ))}
-            </div>
-
-            {/* Studio Workspace Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[420px]">
-              {/* Left Column: Editor & Tabs */}
-              <div className="lg:col-span-7 border-r border-white/5 flex flex-col bg-[#0c0d12]">
-                {/* Editor Tabs */}
-                <div className="flex items-center border-b border-white/5 px-2 bg-[#101218] text-xs">
-                  <button
-                    onClick={() => setPlaygroundTab('editor')}
-                    className={`px-4 py-2 font-medium border-b-2 flex items-center space-x-2 ${
-                      playgroundTab === 'editor'
-                        ? 'border-[#c4f20f] text-[#c4f20f]'
-                        : 'border-transparent text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Code2 size={13} />
-                    <span>SQL Editor</span>
-                  </button>
-                  <button
-                    onClick={() => setPlaygroundTab('results')}
-                    className={`px-4 py-2 font-medium border-b-2 flex items-center space-x-2 ${
-                      playgroundTab === 'results'
-                        ? 'border-[#c4f20f] text-[#c4f20f]'
-                        : 'border-transparent text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Table size={13} />
-                    <span>Virtual Grid ({activeQuestion.rows.length})</span>
-                  </button>
-                  <button
-                    onClick={() => setPlaygroundTab('explain')}
-                    className={`px-4 py-2 font-medium border-b-2 flex items-center space-x-2 ${
-                      playgroundTab === 'explain'
-                        ? 'border-[#c4f20f] text-[#c4f20f]'
-                        : 'border-transparent text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Activity size={13} />
-                    <span>Explain Plan</span>
-                  </button>
-                  <button
-                    onClick={() => setPlaygroundTab('erd')}
-                    className={`px-4 py-2 font-medium border-b-2 flex items-center space-x-2 ${
-                      playgroundTab === 'erd'
-                        ? 'border-[#c4f20f] text-[#c4f20f]'
-                        : 'border-transparent text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Workflow size={13} />
-                    <span>ERD Visualizer</span>
-                  </button>
-                </div>
-
-                {/* Tab Views */}
-                <div className="flex-1 p-4 font-mono text-xs overflow-auto">
-                  {playgroundTab === 'editor' && (
-                    <div className="space-y-4">
-                      <div className="p-3 rounded-lg bg-[#14161e] border border-white/5 text-neutral-300 font-sans text-xs">
-                        <strong className="text-[#c4f20f] font-mono">Q:</strong> "{activeQuestion.question}"
-                      </div>
-                      <pre className="p-4 rounded-lg bg-[#07080a] border border-white/5 text-sky-300 leading-relaxed overflow-x-auto select-all">
-                        {activeQuestion.sql}
-                      </pre>
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="text-[11px] font-sans text-neutral-400">
-                          {activeQuestion.explanation}
-                        </div>
-                        <button
-                          onClick={handleSimulateRun}
-                          disabled={isExecutingQuery}
-                          className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#c4f20f] text-[#0e1702] font-sans font-bold hover:bg-[#d6ff3d] transition-all shrink-0"
-                        >
-                          <Play size={13} />
-                          <span>{isExecutingQuery ? 'Executing...' : 'Run Query'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {playgroundTab === 'results' && (
-                    <div className="space-y-3 font-sans">
-                      <div className="flex items-center justify-between text-xs text-neutral-400">
-                        <span className="font-mono text-[11px] text-emerald-400">
-                          ✓ {activeQuestion.rows.length} rows returned in {activeQuestion.executionTimeMs} ms
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => triggerToast('Exported query to Excel format (.xlsx)')}
-                            className="px-2.5 py-1 rounded bg-[#171a23] hover:bg-[#202430] border border-white/5 text-[11px] text-neutral-300"
-                          >
-                            Export Excel
-                          </button>
-                          <button
-                            onClick={() => triggerToast('Exported query to CSV format (.csv)')}
-                            className="px-2.5 py-1 rounded bg-[#171a23] hover:bg-[#202430] border border-white/5 text-[11px] text-neutral-300"
-                          >
-                            Export CSV
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="border border-white/10 rounded-lg overflow-x-auto bg-[#07080a]">
-                        <table className="w-full text-left text-xs border-collapse font-mono">
-                          <thead>
-                            <tr className="bg-[#12141c] border-b border-white/10 text-neutral-300">
-                              <th className="p-2 border-r border-white/5 text-center text-neutral-600">#</th>
-                              {activeQuestion.columns.map((c, i) => (
-                                <th key={i} className="p-2 border-r border-white/5 font-semibold text-neutral-200">
-                                  {c}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {activeQuestion.rows.map((r, rIdx) => (
-                              <tr key={rIdx} className="border-b border-white/5 hover:bg-white/[0.02]">
-                                <td className="p-2 border-r border-white/5 text-center text-neutral-600">
-                                  {rIdx + 1}
-                                </td>
-                                {r.map((cell, cIdx) => (
-                                  <td key={cIdx} className="p-2 border-r border-white/5 text-neutral-300">
-                                    {isScreenShareMasked && cIdx === 1
-                                      ? '••••••••••••••••'
-                                      : typeof cell === 'number'
-                                      ? cell.toLocaleString()
-                                      : String(cell)}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {playgroundTab === 'explain' && (
-                    <div className="space-y-3 font-sans text-xs">
-                      <div className="p-3 rounded-lg bg-[#141620] border border-white/10 text-neutral-300">
-                        <strong className="text-sky-400">Execution Plan Analysis</strong>
-                        <div className="mt-1 font-mono text-[11px] text-neutral-400">
-                          Total cost: 18.42 • Scan type: INDEX RANGE SCAN • Rows evaluated: {activeQuestion.rowsScanned.toLocaleString()}
-                        </div>
-                      </div>
-                      <pre className="p-4 rounded-lg bg-[#07080a] border border-white/5 font-mono text-emerald-400 text-xs leading-relaxed overflow-x-auto">
-{`SEARCH TABLE customers USING INDEX idx_customers_city (city=?)
-SEARCH TABLE orders USING INDEX idx_orders_customer (customer_id=?)
-USE TEMP B-TREE FOR ORDER BY
--- Optimization Score: 98/100 (Optimal Index Utilization)`}
-                      </pre>
-                    </div>
-                  )}
-
-                  {playgroundTab === 'erd' && (
-                    <div className="space-y-4 font-sans text-xs">
-                      <div className="text-neutral-400 text-[11px]">
-                        Interactive Schema Relationships ({activeDb.schema.tables.length} tables mapped):
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {activeDb.schema.tables.map((t, idx) => (
-                          <div key={idx} className="p-3 rounded-lg bg-[#12141c] border border-white/10 space-y-2">
-                            <div className="font-semibold text-white flex items-center space-x-1.5 border-b border-white/5 pb-1.5">
-                              <Table size={13} className="text-[#c4f20f]" />
-                              <span>{t.name}</span>
-                            </div>
-                            <div className="space-y-1 font-mono text-[11px]">
-                              {t.columns.map((c, cIdx) => (
-                                <div key={cIdx} className="flex items-center justify-between text-neutral-400">
-                                  <span>{c.name}</span>
-                                  <span className="text-[10px] text-neutral-600">
-                                    {c.isPk ? 'PK' : c.isFk ? 'FK' : c.type}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 text-center space-y-3 hover:border-amber-500/30 transition-all group">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6" />
               </div>
-
-              {/* Right Column: Engine Metrics & Safety Guarantees */}
-              <div className="lg:col-span-5 p-5 bg-[#0e1017] flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 text-xs font-semibold text-white">
-                    <ShieldCheck className="text-[#c4f20f]" size={16} />
-                    <span>Real-Time Security & Performance</span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <div className="p-3 rounded-xl bg-[#141620] border border-white/5 flex items-center justify-between">
-                      <span className="text-xs text-neutral-400">Local Latency</span>
-                      <span className="text-xs font-mono font-bold text-emerald-400">
-                        {activeQuestion.executionTimeMs} ms
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[#141620] border border-white/5 flex items-center justify-between">
-                      <span className="text-xs text-neutral-400">Cloud Data Transmission</span>
-                      <span className="text-xs font-mono font-bold text-emerald-400">
-                        0 Bytes (100% Offline)
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[#141620] border border-white/5 flex items-center justify-between">
-                      <span className="text-xs text-neutral-400">Held-Transaction Guard</span>
-                      <span className="text-xs font-mono font-bold text-sky-400">
-                        120s Auto-Rollback
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[#141620] border border-white/5 flex items-center justify-between">
-                      <span className="text-xs text-neutral-400">Dialect Validator</span>
-                      <span className="text-xs font-mono font-bold text-neutral-300">
-                        AST Classified
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gradient-to-br from-[#1a1f0a] to-[#141707] border border-[#c4f20f]/20 text-xs space-y-2">
-                  <div className="font-semibold text-white flex items-center space-x-1.5">
-                    <Sparkles size={14} className="text-[#c4f20f]" />
-                    <span>Enterprise Ready</span>
-                  </div>
-                  <p className="text-neutral-400 leading-relaxed text-[11px]">
-                    Install on corporate laptops without admin privileges or internet access. The frozen backend binary starts immediately without downloading Python or dependencies.
-                  </p>
-                </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">DuckDB</h3>
+                <div className="text-[11px] font-mono text-slate-400">.duckdb • Vectorized</div>
               </div>
             </div>
+
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 text-center space-y-3 hover:border-blue-500/30 transition-all group">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                <Server className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">PostgreSQL</h3>
+                <div className="text-[11px] font-mono text-slate-400">v12 to 16+ • SSL</div>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 text-center space-y-3 hover:border-purple-500/30 transition-all group">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                <Database className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">MySQL</h3>
+                <div className="text-[11px] font-mono text-slate-400">8.0+ & MariaDB</div>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 text-center space-y-3 hover:border-cyan-500/30 transition-all group">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                <Server className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">SQL Server</h3>
+                <div className="text-[11px] font-mono text-slate-400">T-SQL • Azure SQL</div>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 text-center space-y-3 hover:border-emerald-500/30 transition-all group">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <FileSpreadsheet className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">Flat Files</h3>
+                <div className="text-[11px] font-mono text-slate-400">CSV • XLSX • JSON</div>
+              </div>
+            </div>
+
           </div>
-        </section>
 
-        {/* ENTERPRISE ARCHITECTURE HIGHLIGHTS */}
-        <section id="enterprise" className="py-20 px-6 border-t border-white/5 bg-[#07080b]">
-          <div className="max-w-6xl mx-auto space-y-12">
-            <div className="text-center space-y-3">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                Engineered for High-Stakes Data Teams
-              </h2>
-              <p className="text-sm text-neutral-400 max-w-xl mx-auto">
-                No telemetry. No third-party vector databases. Complete isolation of your internal schemas and proprietary table definitions.
+          <div className="text-center">
+            <Link 
+              href="/databases" 
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold inline-flex items-center gap-1 hover:underline"
+            >
+              View detailed connection guide & driver specifications <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+      {/* Section 5: Natural Language to SQL Storytelling */}
+      <section className="py-24 border-t border-white/5 bg-[#0d0e11]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          <div className="text-center space-y-4 max-w-2xl mx-auto">
+            <div className="text-xs font-semibold uppercase tracking-wider text-purple-400">Visual Workflow</div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              How Natural Language to SQL Actually Works
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              No black boxes. A 5-step transparent workflow giving you full visibility from plain prompt to verified query result.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 space-y-2.5">
+              <span className="text-emerald-400 font-mono text-xs font-bold">Step 1</span>
+              <h3 className="font-bold text-white text-sm">Ask a Question</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Type in plain English: &ldquo;Show customer churn rate by region in 2026&rdquo;.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Feature 1 */}
-              <div className="p-6 rounded-2xl bg-[#0e1016] border border-white/5 space-y-3 hover:border-white/10 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-[#c4f20f]/10 text-[#c4f20f] flex items-center justify-center">
-                  <Lock size={20} />
-                </div>
-                <h3 className="text-lg font-semibold text-white">Local Cryptographic Boundary</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Every launch generates a cryptographically random 256-bit token. All internal IPC communications require constant-time digest verification.
-                </p>
-              </div>
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 space-y-2.5">
+              <span className="text-blue-400 font-mono text-xs font-bold">Step 2</span>
+              <h3 className="font-bold text-white text-sm">Local Schema RAG</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Matches prompt against local table DDL, foreign keys, and column hints.
+              </p>
+            </div>
 
-              {/* Feature 2 */}
-              <div className="p-6 rounded-2xl bg-[#0e1016] border border-white/5 space-y-3 hover:border-white/10 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center">
-                  <HardDrive size={20} />
-                </div>
-                <h3 className="text-lg font-semibold text-white">Build-Time PyInstaller Binary</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  FastAPI and Uvicorn are compiled directly into a native Windows executable. Users never encounter pip errors, missing wheels, or broken environments.
-                </p>
-              </div>
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 space-y-2.5">
+              <span className="text-purple-400 font-mono text-xs font-bold">Step 3</span>
+              <h3 className="font-bold text-white text-sm">Generate & Review</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                View synthesized, beautified SQL in Monaco with syntax highlights.
+              </p>
+            </div>
 
-              {/* Feature 3 */}
-              <div className="p-6 rounded-2xl bg-[#0e1016] border border-white/5 space-y-3 hover:border-white/10 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                  <ShieldAlert size={20} />
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 space-y-2.5">
+              <span className="text-amber-400 font-mono text-xs font-bold">Step 4</span>
+              <h3 className="font-bold text-white text-sm">Guarded Execution</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Inspect EXPLAIN plans and run safely with mutation warnings.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/5 space-y-2.5">
+              <span className="text-emerald-400 font-mono text-xs font-bold">Step 5</span>
+              <h3 className="font-bold text-white text-sm">Inspect & Export</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Scroll through millions of rows smoothly and export to Excel (.xlsx) or CSV.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Section 6: Feature Showcase (Alternating Rhythm) */}
+      <section className="py-24 border-t border-white/5 bg-[#0e1016] space-y-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24">
+          
+          {/* Feature 1: Monaco Editor */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-6 space-y-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">Pro SQL Editor</div>
+              <h2 className="text-3xl font-extrabold text-white tracking-tight">
+                Monaco Editor Engine with Format-On-Run
+              </h2>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Equipped with the same editor technology powering VS Code. Instant autocomplete, bracket matching, 
+                minimap navigation, and automatic SQL beautification on <code className="text-emerald-300 font-mono text-xs">Ctrl+Enter</code>.
+              </p>
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Configurable font ligatures, line numbers, and cursor animations</span>
                 </div>
-                <h3 className="text-lg font-semibold text-white">Mutation Diff Preview</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Statements containing UPDATE, DELETE, or DROP automatically trigger a pre-commit diff review and hold transactions with a 120-second rollback countdown.
-                </p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Saved query buffers and automatic multi-tab session restoration</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 rounded-2xl bg-[#141720] border border-white/10 p-5 font-mono text-xs text-slate-300 shadow-xl">
+              <div className="text-slate-400 pb-2 border-b border-white/5 flex justify-between text-[11px]">
+                <span className="text-emerald-400 font-semibold">orders_summary.sql</span>
+                <span>Ctrl+Enter to Execute</span>
+              </div>
+              <pre className="pt-3 text-[11px] leading-relaxed text-emerald-300">
+                SELECT customer_id, COUNT(*) AS orders,<br />
+                &nbsp;&nbsp;ROUND(SUM(amount), 2) AS total_spent<br />
+                FROM orders<br />
+                WHERE status = &apos;completed&apos;<br />
+                GROUP BY customer_id HAVING total_spent &gt; 1000<br />
+                ORDER BY total_spent DESC LIMIT 10;
+              </pre>
+            </div>
+          </div>
+
+          {/* Feature 2: High Performance Virtual Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-6 order-2 lg:order-1 rounded-2xl bg-[#141720] border border-white/10 p-5 font-mono text-xs text-slate-300 shadow-xl space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/5 text-[11px]">
+                <span className="text-white font-sans font-semibold">Results Grid</span>
+                <span className="text-emerald-400">100,000 rows • 2.4ms render</span>
+              </div>
+              <div className="text-[11px] space-y-1">
+                <div className="grid grid-cols-3 bg-white/5 p-1.5 rounded font-bold text-slate-200">
+                  <span>Customer</span>
+                  <span>Region</span>
+                  <span className="text-right">Spend</span>
+                </div>
+                <div className="grid grid-cols-3 p-1.5 rounded hover:bg-white/[0.03]">
+                  <span>Sophia Martinez</span>
+                  <span>North America</span>
+                  <span className="text-right text-emerald-400">$4,820.50</span>
+                </div>
+                <div className="grid grid-cols-3 p-1.5 rounded hover:bg-white/[0.03]">
+                  <span>Alexander Wright</span>
+                  <span>Europe (UK)</span>
+                  <span className="text-right text-emerald-400">$3,940.00</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 order-1 lg:order-2 space-y-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-400">Instant Performance</div>
+              <h2 className="text-3xl font-extrabold text-white tracking-tight">
+                Virtualized Results That Never Drop a Frame
+              </h2>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Render hundreds of thousands of query rows with zero sluggishness. 
+                Built with TanStack Virtual for instant scrolling, sortable columns, distinct NULL highlighting, and fast Excel exports.
+              </p>
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Screen-share privacy shield masks sensitive emails and tokens</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>One-click export to native Excel (.xlsx) or RFC-4180 CSV</span>
+                </div>
               </div>
             </div>
           </div>
-        </section>
 
-        {/* COMPARISON MATRIX (ENTERPRISE EVALUATION) */}
-        <section id="matrix" className="py-20 px-6 max-w-5xl mx-auto">
-          <div className="text-center space-y-3 mb-12">
-            <h2 className="text-3xl font-bold text-white tracking-tight">
-              zero-sql vs Traditional & Cloud Alternatives
+        </div>
+      </section>
+
+      {/* Section 7: Why Zero-SQL (Comparison Matrix) */}
+      <section className="py-24 border-t border-white/5 bg-[#0b0c0f]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Comparison</div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Why Developers Choose zero-sql
             </h2>
-            <p className="text-sm text-neutral-400">
-              Why enterprise compliance and security officers mandate zero-sql for internal database operations.
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Designed from first principles to fix the bloat, sluggishness, and privacy risks of legacy database clients.
             </p>
           </div>
 
-          <div className="border border-white/10 rounded-2xl overflow-hidden bg-[#0d0f14] shadow-xl">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#141720]">
+            <table className="w-full text-left text-xs font-mono border-collapse">
               <thead>
-                <tr className="bg-[#12141c] border-b border-white/10 text-neutral-300">
-                  <th className="p-4 font-semibold">Capability</th>
-                  <th className="p-4 font-semibold text-[#c4f20f] bg-[#c4f20f]/5">zero-sql</th>
-                  <th className="p-4 font-semibold text-neutral-400">Cloud AI SQL Tools</th>
-                  <th className="p-4 font-semibold text-neutral-400">Legacy SQL Clients</th>
+                <tr className="bg-[#101218] border-b border-white/10 text-slate-300">
+                  <th className="py-3.5 px-4 font-semibold font-sans">Feature Capability</th>
+                  <th className="py-3.5 px-4 font-semibold text-emerald-400 font-sans text-center bg-emerald-500/10">zero-sql</th>
+                  <th className="py-3.5 px-4 font-semibold text-slate-400 font-sans text-center">Legacy Clients (DBeaver / pgAdmin)</th>
+                  <th className="py-3.5 px-4 font-semibold text-slate-400 font-sans text-center">Cloud AI SaaS Tools</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-white/5 text-slate-300">
                 <tr>
-                  <td className="p-4 font-medium text-white">Data Privacy & Schema Isolation</td>
-                  <td className="p-4 bg-[#c4f20f]/5 font-semibold text-emerald-400">100% Local (0 bytes sent)</td>
-                  <td className="p-4 text-rose-400">Transmitted to cloud backend</td>
-                  <td className="p-4 text-neutral-400">Local (No AI features)</td>
+                  <td className="py-3 px-4 font-sans font-medium text-white">Startup Latency</td>
+                  <td className="py-3 px-4 text-center text-emerald-400 font-bold bg-emerald-500/5">Sub-second (~800ms)</td>
+                  <td className="py-3 px-4 text-center text-slate-400">Slow (10s - 30s JVM startup)</td>
+                  <td className="py-3 px-4 text-center text-slate-400">Depends on web browser</td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-medium text-white">Host Python Dependencies</td>
-                  <td className="p-4 bg-[#c4f20f]/5 font-semibold text-emerald-400">Zero (Frozen executable)</td>
-                  <td className="p-4 text-neutral-400">Cloud hosted</td>
-                  <td className="p-4 text-neutral-400">Requires Java JRE / C++ runtimes</td>
+                  <td className="py-3 px-4 font-sans font-medium text-white">Data Privacy & Proxying</td>
+                  <td className="py-3 px-4 text-center text-emerald-400 font-bold bg-emerald-500/5">100% Local (Zero Cloud Proxy)</td>
+                  <td className="py-3 px-4 text-center text-slate-300">Local</td>
+                  <td className="py-3 px-4 text-center text-red-400">Proxies DB data through cloud</td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-medium text-white">Mutation Auto-Rollback Guard</td>
-                  <td className="p-4 bg-[#c4f20f]/5 font-semibold text-emerald-400">120s Held Transaction Diff</td>
-                  <td className="p-4 text-rose-400">None (Instant execution)</td>
-                  <td className="p-4 text-neutral-400">Manual commit toggles</td>
+                  <td className="py-3 px-4 font-sans font-medium text-white">Natural Language SQL</td>
+                  <td className="py-3 px-4 text-center text-emerald-400 font-bold bg-emerald-500/5">Built-in Local RAG Synthesis</td>
+                  <td className="py-3 px-4 text-center text-slate-400">None / Paid plugin</td>
+                  <td className="py-3 px-4 text-center text-slate-300">Supported (Trains cloud models)</td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-medium text-white">Live Screen-Share Masking</td>
-                  <td className="p-4 bg-[#c4f20f]/5 font-semibold text-emerald-400">1-Click Global PII Redaction</td>
-                  <td className="p-4 text-rose-400">Not supported</td>
-                  <td className="p-4 text-rose-400">Not supported</td>
+                  <td className="py-3 px-4 font-sans font-medium text-white">Flat File SQL Queries</td>
+                  <td className="py-3 px-4 text-center text-emerald-400 font-bold bg-emerald-500/5">Native CSV, XLSX & JSON</td>
+                  <td className="py-3 px-4 text-center text-slate-400">Requires import into server</td>
+                  <td className="py-3 px-4 text-center text-slate-400">Upload to third-party cloud</td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-medium text-white">Spreadsheet Ingestion (.csv, .xlsx)</td>
-                  <td className="p-4 bg-[#c4f20f]/5 font-semibold text-emerald-400">Instant Drag & Drop SQLite</td>
-                  <td className="p-4 text-neutral-400">Paid tier only</td>
-                  <td className="p-4 text-neutral-400">Complex import wizards</td>
+                  <td className="py-3 px-4 font-sans font-medium text-white">Screen-Share Privacy Mode</td>
+                  <td className="py-3 px-4 text-center text-emerald-400 font-bold bg-emerald-500/5">1-Click Live Masking</td>
+                  <td className="py-3 px-4 text-center text-slate-400">None</td>
+                  <td className="py-3 px-4 text-center text-slate-400">None</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 font-sans font-medium text-white">Installation Overhead</td>
+                  <td className="py-3 px-4 text-center text-emerald-400 font-bold bg-emerald-500/5">Standalone Exe (0 Python/Java)</td>
+                  <td className="py-3 px-4 text-center text-slate-400">Requires Java JRE / Python</td>
+                  <td className="py-3 px-4 text-center text-slate-300">Web Account Registration</td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </section>
 
-        {/* WINDOWS SMARTSCREEN GUIDANCE (TRUST & PLAYFUL) */}
-        <section id="smartscreen" className="py-20 px-6 bg-[#07080b] border-t border-white/5">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="text-center space-y-2">
-              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs">
-                <ShieldAlert size={13} />
-                <span>Windows Defender SmartScreen Guide</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                Installing on Windows 10 & 11
-              </h2>
-              <p className="text-xs text-neutral-400 max-w-lg mx-auto">
-                Because zero-sql is independently published and free from proprietary corporate certificates, Windows SmartScreen may display a prompt upon initial launch.
+        </div>
+      </section>
+
+      {/* Section 8: Privacy and Security */}
+      <section className="py-24 border-t border-white/5 bg-[#0d0e11]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Security Architecture</div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Your Data Never Touches Our Servers
+            </h2>
+            <p className="text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              Unlike cloud-hosted AI database assistants, Zero-SQL runs completely on your machine. 
+              Credentials stay in your OS keychain, and query rows are processed exclusively in your workstation memory.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/10 space-y-2.5">
+              <ShieldCheck className="w-6 h-6 text-emerald-400" />
+              <h3 className="font-bold text-white text-sm">Direct Loopback IPC</h3>
+              <p className="text-slate-400 leading-relaxed">
+                FastAPI Python backend listens exclusively on loopback (127.0.0.1) with cryptographic token validation on every request.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              {/* Step Graphic */}
-              <div className="p-5 rounded-2xl bg-[#0d0f15] border border-white/10 space-y-4">
-                <div className="text-xs font-semibold text-neutral-300 flex items-center space-x-2">
-                  <Terminal size={14} className="text-[#c4f20f]" />
-                  <span>2-Click Verification Steps</span>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div className="p-3 rounded-xl bg-[#141722] border border-white/5 flex items-start space-x-3">
-                    <span className="w-5 h-5 rounded-full bg-[#c4f20f] text-[#0e1702] font-bold text-[11px] flex items-center justify-center shrink-0">1</span>
-                    <span className="text-neutral-300">
-                      On the Windows prompt, click <strong className="text-white underline">"More info"</strong>.
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#141722] border border-white/5 flex items-start space-x-3">
-                    <span className="w-5 h-5 rounded-full bg-[#c4f20f] text-[#0e1702] font-bold text-[11px] flex items-center justify-center shrink-0">2</span>
-                    <span className="text-neutral-300">
-                      Click the <strong className="text-white underline">"Run anyway"</strong> button to launch the installer.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Trust & Integrity Card */}
-              <div className="p-5 rounded-2xl bg-[#0d0f15] border border-white/10 space-y-3 text-xs text-neutral-400">
-                <div className="text-xs font-semibold text-white flex items-center space-x-2">
-                  <Lock size={14} className="text-emerald-400" />
-                  <span>Cryptographic Release Guarantee</span>
-                </div>
-                <p className="leading-relaxed">
-                  Every executable binary is compiled transparently through public GitHub Actions runners with pinned Python 3.12 and audited dependencies.
-                </p>
-                <div className="pt-2 font-mono text-[11px] text-neutral-300 bg-[#141620] p-2.5 rounded-lg border border-white/5 break-all">
-                  SHA-256: {sha256Hash}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ SECTION */}
-        <section id="faq" className="py-20 px-6 max-w-4xl mx-auto space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold text-white tracking-tight">Frequently Asked Questions</h2>
-            <p className="text-xs text-neutral-400">Everything you need to know about deploying zero-sql across your team.</p>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            <div className="p-4 rounded-xl bg-[#0e1017] border border-white/5 space-y-1.5">
-              <h3 className="font-semibold text-white text-sm">Do I need Python installed on my Windows machine?</h3>
-              <p className="text-neutral-400 leading-relaxed">
-                No. The Python backend is frozen into a standalone executable at build time using PyInstaller. Zero-sql bundles its own runtime and runs with 100% independence on clean machines with no internet required.
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/10 space-y-2.5">
+              <Lock className="w-6 h-6 text-blue-400" />
+              <h3 className="font-bold text-white text-sm">OS Keychain Vault</h3>
+              <p className="text-slate-400 leading-relaxed">
+                Credentials and connection strings are encrypted on disk via Electron safeStorage (Windows DPAPI) and never stored in plaintext.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#0e1017] border border-white/5 space-y-1.5">
-              <h3 className="font-semibold text-white text-sm">Is my database data ever transmitted to OpenAI or Groq?</h3>
-              <p className="text-neutral-400 leading-relaxed">
-                No database rows are ever uploaded. When natural language SQL generation is invoked, zero-sql constructs an AST prompt containing only sanitized table and column names. All database queries execute strictly on your local PC.
+            <div className="p-5 rounded-2xl bg-[#141720] border border-white/10 space-y-2.5">
+              <AlertTriangle className="w-6 h-6 text-amber-400" />
+              <h3 className="font-bold text-white text-sm">Transaction Safety</h3>
+              <p className="text-slate-400 leading-relaxed">
+                Destructive queries (DROP, DELETE, TRUNCATE) trigger instant warning modals before execution, with read-only connection locks.
               </p>
             </div>
-
-            <div className="p-4 rounded-xl bg-[#0e1017] border border-white/5 space-y-1.5">
-              <h3 className="font-semibold text-white text-sm">How does automatic updating work?</h3>
-              <p className="text-neutral-400 leading-relaxed">
-                Packaged builds poll the public release feed on <code className="text-[#c4f20f]">LochanJangid/zero_sql</code> every four hours. When an update is detected, it downloads silently in the background and offers a non-intrusive 1-click restart button.
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/5 py-12 px-6 bg-[#07080a] text-xs text-neutral-500">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-3">
-            <Image
-              src="/logo-icon.png"
-              alt="zero-sql"
-              width={24}
-              height={24}
-              className="h-6 w-auto"
-            />
-            <span className="text-neutral-400 font-medium">zero-sql Desktop Client</span>
-            <span>•</span>
-            <span>Version {version}</span>
-          </div>
-
-          <div className="flex items-center space-x-6">
-            <a href={FALLBACK_REPO_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-              GitHub Source
-            </a>
-            <a href={FALLBACK_RELEASES_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-              Releases & Mirror
-            </a>
-            <a href="#smartscreen" className="hover:text-white transition-colors">
-              Installation Guide
-            </a>
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Section 9: Complete Product Workflow */}
+      <section className="py-24 border-t border-white/5 bg-[#0b0c0f]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Complete Journey</div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Connect. Explore. Ask. Execute.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center text-xs font-mono">
+            {['Connect', 'Explore', 'Ask AI', 'Generate', 'Review', 'Execute', 'Export'].map((step, i) => (
+              <div key={i} className="p-4 rounded-xl bg-[#141720] border border-white/5 space-y-1.5">
+                <span className="text-[10px] text-emerald-400 font-bold block">0{i + 1}</span>
+                <span className="font-semibold text-white block">{step}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Section 10: Developer-Focused Section */}
+      <section className="py-20 border-t border-white/5 bg-[#0e1016]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold tracking-wide uppercase">
+            <Terminal className="w-3.5 h-3.5" />
+            Built for Serious Developers
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Lightweight Footprint. Heavyweight Performance.
+          </h2>
+          <p className="max-w-2xl mx-auto text-sm text-slate-400 leading-relaxed">
+            Zero-SQL compiles into a standalone, portable desktop binary. 
+            No background licensing daemons, no mandatory account sign-in, and zero analytics telemetry tracking your queries.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <Link
+              href="/docs"
+              className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold text-xs border border-white/10 transition-colors"
+            >
+              Read the Documentation
+            </Link>
+            <Link
+              href="/open-source"
+              className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold text-xs border border-white/10 transition-colors"
+            >
+              Explore Open Source Code
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 11: Download Section */}
+      <section className="py-24 border-t border-white/5 bg-[#0b0c0f]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-center">
+          <div className="space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Get Started</div>
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Download zero-sql Free
+            </h2>
+            <p className="text-sm text-slate-400 max-w-xl mx-auto">
+              Get the standalone installer for Windows 10 & 11 (x64). Standalone executable with zero external runtime requirements.
+            </p>
+          </div>
+
+          <div className="p-8 rounded-2xl bg-[#141720] border border-white/10 shadow-2xl space-y-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-left space-y-1">
+                <div className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>zero-sql for Windows (x64)</span>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    v0.1.3
+                  </span>
+                </div>
+                <div className="text-xs text-slate-400">
+                  NSIS Installer • ~219 MB • Bundled Python 3.12 Core
+                </div>
+              </div>
+
+              <Link
+                href="/download"
+                className="px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02]"
+              >
+                Download Installer (.exe)
+              </Link>
+            </div>
+
+            <div className="pt-4 border-t border-white/5 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-3 font-mono">
+              <span>SHA-256 Verified Release</span>
+              <Link href="/download" className="text-emerald-400 hover:underline">
+                View Checksums & SmartScreen Instructions →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 12: Categorized FAQ */}
+      <section className="py-24 border-t border-white/5 bg-[#0d0e11]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">FAQ</div>
+            <h2 className="text-3xl font-extrabold text-white tracking-tight">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-sm text-slate-400">Everything you need to know about Zero-SQL.</p>
+          </div>
+
+          <div className="space-y-4 text-xs sm:text-sm">
+            
+            <div className="p-5 rounded-xl bg-[#141720] border border-white/5 space-y-2">
+              <h3 className="font-bold text-white text-base">Does zero-sql require Python or Node.js on my computer?</h3>
+              <p className="text-slate-400 leading-relaxed text-xs sm:text-sm">
+                No. Zero-SQL compiles the complete Python 3.12 backend and all dependencies into a standalone executable using PyInstaller. It runs on clean Windows 10/11 machines with zero prerequisites installed.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-[#141720] border border-white/5 space-y-2">
+              <h3 className="font-bold text-white text-base">Does zero-sql send my database rows to the cloud?</h3>
+              <p className="text-slate-400 leading-relaxed text-xs sm:text-sm">
+                Never. Query execution happens directly on your machine via direct loopback communication. Only column names and table DDL are sent for AI synthesis when you explicitly request SQL generation. No database passwords or row contents are ever transmitted.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-[#141720] border border-white/5 space-y-2">
+              <h3 className="font-bold text-white text-base">Which databases are currently supported?</h3>
+              <p className="text-slate-400 leading-relaxed text-xs sm:text-sm">
+                Zero-SQL supports SQLite (.db), DuckDB (.duckdb), PostgreSQL, MySQL, Microsoft SQL Server (T-SQL), and queryable flat data files (.csv, .xlsx, and .json).
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-[#141720] border border-white/5 space-y-2">
+              <h3 className="font-bold text-white text-base">Why does Windows SmartScreen show a prompt during install?</h3>
+              <p className="text-slate-400 leading-relaxed text-xs sm:text-sm">
+                As an independent open-source project without a multi-thousand-dollar enterprise EV code signing certificate, new releases trigger SmartScreen until they accumulate trust. Simply click &ldquo;More info&rdquo; and &ldquo;Run anyway&rdquo;. You can verify the SHA-256 hash on our Download page.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Section 13: Creator Section & Footer */}
+      <CreatorSection />
+      <Footer />
     </div>
   );
 }
