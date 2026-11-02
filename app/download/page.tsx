@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 const DOWNLOAD_URL = '/api/download';
-const SHA256_HASH_V12 = 'c5c672bcf077ce1091a51c6e11b3a7e485a71903e6354fbb0c4c67a73e638b5e';
+const SHA256_HASH_V13 = '2fd29270fa3548aa3877f9bf9ea87ce130b8abb7b3f749dfe998763b74787ab6';
 
 export default function DownloadPage() {
   const [downloadUrl] = useState(DOWNLOAD_URL);
@@ -28,7 +28,7 @@ export default function DownloadPage() {
   const [copiedPs, setCopiedPs] = useState(false);
 
   const copyHash = () => {
-    navigator.clipboard.writeText(SHA256_HASH_V12);
+    navigator.clipboard.writeText(SHA256_HASH_V13);
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2000);
   };
@@ -123,7 +123,7 @@ export default function DownloadPage() {
             </div>
 
             <div className="p-3 bg-[#0d0e12] rounded-lg text-emerald-400 break-all select-all text-[11px]">
-              {SHA256_HASH_V12}
+              {SHA256_HASH_V13}
             </div>
 
             <div className="flex items-center justify-between pt-1">
