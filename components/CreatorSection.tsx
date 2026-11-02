@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
-import { Github, Linkedin, Globe, Code2, ArrowUpRight, ShieldCheck, Sparkles, Terminal } from 'lucide-react';
+import Link from 'next/link';
+import { Linkedin, Globe, Download, ArrowUpRight, ShieldCheck, Sparkles, Terminal, Code2 } from 'lucide-react';
 
 export default function CreatorSection() {
   return (
@@ -88,17 +89,6 @@ export default function CreatorSection() {
               {/* Official Social & Portfolio Links */}
               <div className="pt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
                 <a 
-                  href="https://github.com/LochanJangid" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-medium transition-all group"
-                >
-                  <Github className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
-                  <span>GitHub Profile</span>
-                  <ArrowUpRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-
-                <a 
                   href="https://www.linkedin.com/in/lochan-jangid/" 
                   target="_blank" 
                   rel="noopener noreferrer"
@@ -120,16 +110,14 @@ export default function CreatorSection() {
                   <ArrowUpRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </a>
 
-                <a 
-                  href="https://github.com/LochanJangid/zero_sql" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                <Link 
+                  href="/download"
                   className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-medium transition-all group"
                 >
-                  <Code2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>zero-sql Repository</span>
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Download Desktop App</span>
                   <ArrowUpRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
+                </Link>
               </div>
 
             </div>

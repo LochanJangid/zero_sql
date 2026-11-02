@@ -13,39 +13,19 @@ import {
   Check, 
   Terminal, 
   HardDrive, 
-  ExternalLink,
   AlertCircle,
   HelpCircle,
   ArrowRight
 } from 'lucide-react';
 
-const FALLBACK_DOWNLOAD_URL = 'https://github.com/LochanJangid/zero_sql/releases/download/v0.1.3/zero-sql-Setup-0.1.3-x64.exe';
-const FALLBACK_V12_DOWNLOAD_URL = 'https://github.com/LochanJangid/zero_sql/releases/download/v0.1.2/zero-sql-Setup-0.1.2-x64.exe';
+const DOWNLOAD_URL = '/api/download';
 const SHA256_HASH_V12 = 'c5c672bcf077ce1091a51c6e11b3a7e485a71903e6354fbb0c4c67a73e638b5e';
 
 export default function DownloadPage() {
-  const [downloadUrl, setDownloadUrl] = useState(FALLBACK_DOWNLOAD_URL);
-  const [version, setVersion] = useState('0.1.3');
+  const [downloadUrl] = useState(DOWNLOAD_URL);
+  const [version] = useState('0.1.3');
   const [copiedHash, setCopiedHash] = useState(false);
   const [copiedPs, setCopiedPs] = useState(false);
-
-  useEffect(() => {
-    // Attempt dynamic fetch from GitHub releases API
-    fetch('https://api.github.com/repos/LochanJangid/zero_sql/releases/latest')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.assets && data.assets.length > 0) {
-          const exeAsset = data.assets.find((a: any) => a.name.endsWith('.exe'));
-          if (exeAsset) {
-            setDownloadUrl(exeAsset.browser_download_url);
-            setVersion(data.tag_name.replace('v', ''));
-          }
-        }
-      })
-      .catch(() => {
-        // Fallback already set
-      });
-  }, []);
 
   const copyHash = () => {
     navigator.clipboard.writeText(SHA256_HASH_V12);
@@ -54,7 +34,7 @@ export default function DownloadPage() {
   };
 
   const copyPsCommand = () => {
-    navigator.clipboard.writeText('Get-FileHash .\\zero-sql-Setup-*.exe -Algorithm SHA256');
+    navigator.clipboard.writeText('Get-FileHash .\\zero-sql-Setup.exe -Algorithm SHA256');
     setCopiedPs(true);
     setTimeout(() => setCopiedPs(false), 2000);
   };
@@ -105,7 +85,7 @@ export default function DownloadPage() {
                 <span>Download Installer (.exe)</span>
               </a>
               <span className="text-[11px] font-mono text-slate-400">
-                100% Free & Open Source under ISC License
+                Free Desktop Application for Windows
               </span>
             </div>
           </div>
@@ -165,7 +145,7 @@ export default function DownloadPage() {
               <span>Windows SmartScreen Note</span>
             </div>
             <p className="leading-relaxed">
-              If Windows displays a blue &ldquo;Windows protected your PC&rdquo; message, this is expected for newly published open-source releases that have not accumulated commercial reputation.
+              If Windows displays a blue &ldquo;Windows protected your PC&rdquo; message, this is expected for newly published desktop applications that have not accumulated commercial reputation.
             </p>
             <div className="space-y-1.5 pl-4 border-l-2 border-amber-400 font-sans">
               <div>1. Click <strong className="text-white">&ldquo;More info&rdquo;</strong></div>
@@ -179,15 +159,13 @@ export default function DownloadPage() {
       {/* Release Links */}
       <section className="py-12 text-center text-xs text-slate-400 space-y-2">
         <div>
-          Looking for older versions or source tarballs? Visit the{' '}
-          <a
-            href="https://github.com/LochanJangid/zero_sql/releases"
-            target="_blank"
-            rel="noopener noreferrer"
+          Looking for release notes and update history? Visit the{' '}
+          <Link
+            href="/changelog"
             className="text-emerald-400 hover:underline inline-flex items-center gap-1"
           >
-            GitHub Releases Page <ExternalLink className="w-3 h-3" />
-          </a>
+            Changelog <ArrowRight className="w-3 h-3" />
+          </Link>
         </div>
       </section>
 

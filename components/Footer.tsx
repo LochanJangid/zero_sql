@@ -2,13 +2,11 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
-  Github, 
   Linkedin, 
   Globe, 
   Database, 
   ShieldCheck, 
   Terminal, 
-  Heart,
   ArrowUpRight
 } from 'lucide-react';
 
@@ -35,15 +33,6 @@ export default function Footer() {
             </p>
 
             <div className="flex items-center gap-3 pt-2">
-              <a 
-                href="https://github.com/LochanJangid/zero_sql" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:border-white/20 hover:bg-white/10 transition-colors"
-                aria-label="GitHub Repository"
-              >
-                <Github className="w-4 h-4" />
-              </a>
               <a 
                 href="https://www.linkedin.com/in/lochan-jangid/" 
                 target="_blank" 
@@ -145,12 +134,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Community & Creator */}
+          {/* Creator & Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Developer</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Creator</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="https://github.com/LochanJangid" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1">
+                <a href="https://lochan.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1">
                   Lochan Jangid <ArrowUpRight className="w-3 h-3 text-slate-400" />
                 </a>
               </li>
@@ -165,12 +154,14 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <Link href="/open-source" className="hover:text-white transition-colors">Open Source</Link>
+                <Link href="/changelog" className="hover:text-white transition-colors">
+                  Release History
+                </Link>
               </li>
               <li>
-                <a href="https://github.com/LochanJangid/zero_sql/releases" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1">
-                  GitHub Releases <ArrowUpRight className="w-3 h-3 text-slate-400" />
-                </a>
+                <Link href="/download" className="hover:text-white transition-colors">
+                  Desktop Installer
+                </Link>
               </li>
             </ul>
           </div>
@@ -180,14 +171,14 @@ export default function Footer() {
         {/* Bottom Bar with Required Attribution */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div>
-            © {new Date().getFullYear()} zero-sql. Released under the ISC License.
+            © {new Date().getFullYear()} zero-sql. All rights reserved.
           </div>
 
           {/* Strict required attribution */}
           <div className="flex items-center gap-1.5 font-medium text-slate-300">
             <span>Designed and developed by</span>
             <a 
-              href="https://github.com/LochanJangid" 
+              href="https://lochan.vercel.app/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white hover:text-emerald-400 transition-colors font-semibold underline underline-offset-4 decoration-white/20 hover:decoration-emerald-400"
@@ -198,7 +189,7 @@ export default function Footer() {
 
           <div className="flex items-center gap-6">
             <Link href="/security" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
-            <Link href="/open-source" className="hover:text-slate-300 transition-colors">License</Link>
+            <Link href="/security" className="hover:text-slate-300 transition-colors">Security</Link>
             <Link href="/changelog" className="hover:text-slate-300 transition-colors">Release Notes</Link>
           </div>
         </div>

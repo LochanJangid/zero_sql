@@ -100,7 +100,7 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-              <span>Open Source (ISC)</span>
+              <span>Free Desktop Software</span>
             </div>
           </div>
         </div>
@@ -507,10 +507,10 @@ export default function HomePage() {
               Read the Documentation
             </Link>
             <Link
-              href="/open-source"
+              href="/features"
               className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold text-xs border border-white/10 transition-colors"
             >
-              Explore Open Source Code
+              Explore All Features
             </Link>
           </div>
         </div>
@@ -598,7 +598,7 @@ export default function HomePage() {
             <div className="p-5 rounded-xl bg-[#141720] border border-white/5 space-y-2">
               <h3 className="font-bold text-white text-base">Why does Windows SmartScreen show a prompt during install?</h3>
               <p className="text-slate-400 leading-relaxed text-xs sm:text-sm">
-                As an independent open-source project without a multi-thousand-dollar enterprise EV code signing certificate, new releases trigger SmartScreen until they accumulate trust. Simply click &ldquo;More info&rdquo; and &ldquo;Run anyway&rdquo;. You can verify the SHA-256 hash on our Download page.
+                As an independent developer application without an expensive enterprise EV code signing certificate, new releases trigger SmartScreen until they accumulate trust. Simply click &ldquo;More info&rdquo; and &ldquo;Run anyway&rdquo;. You can verify the SHA-256 hash on our Download page.
               </p>
             </div>
 

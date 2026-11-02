@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { 
   Download, 
-  Github, 
   Menu as MenuIcon, 
   X, 
   Database, 
@@ -172,31 +171,21 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
               </Link>
 
               <Link 
-                href="/open-source" 
+                href="/changelog" 
                 className={`px-3 py-1.5 rounded-lg transition-colors hover:text-white hover:bg-white/5 ${
-                  currentPath === '/open-source' ? 'text-white bg-white/5' : ''
+                  currentPath === '/changelog' ? 'text-white bg-white/5' : ''
                 }`}
               >
-                Open Source
+                Changelog
               </Link>
             </nav>
           </div>
 
           {/* Right Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            <a 
-              href="https://github.com/LochanJangid/zero_sql" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-white/10 text-slate-300 hover:text-white hover:border-white/20 hover:bg-white/5 text-sm font-medium transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              <span>GitHub</span>
-            </a>
-
             <Link 
               href="/download" 
-              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-all shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-[0.98]"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-all shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/30 active:scale-[0.98]"
             >
               <Download className="w-4 h-4 stroke-[2.5]" />
               <span>Download Free</span>
@@ -267,14 +256,7 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
             >
               Changelog
             </Link>
-            <Link 
-              href="/open-source" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/5"
-            >
-              Open Source
-            </Link>
-            <div className="pt-3 flex flex-col gap-2">
+            <div className="pt-3">
               <Link 
                 href="/download" 
                 onClick={() => setMobileMenuOpen(false)}
@@ -283,15 +265,6 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
                 <Download className="w-4 h-4 stroke-[2.5]" />
                 Download zero-sql for Windows
               </Link>
-              <a 
-                href="https://github.com/LochanJangid/zero_sql" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-2 rounded-lg border border-white/10 text-slate-300 text-sm font-medium"
-              >
-                <Github className="w-4 h-4" />
-                View GitHub Repository
-              </a>
             </div>
           </div>
         )}

@@ -8,7 +8,6 @@ import {
   Tag, 
   CheckCircle2, 
   Download, 
-  ExternalLink,
   ArrowRight,
   Sparkles
 } from 'lucide-react';
@@ -25,11 +24,11 @@ const RELEASES = [
     badge: 'Latest Release',
     highlights: [
       'Auto-Updater Resilience: Gracefully detects when the user is already on the latest version without surfacing 404 manifest errors.',
-      'CI Manifest Guarantee: Automated pipeline verification that uploads latest.yml and differential blockmaps to GitHub Releases.',
+      'Release Manifest Guarantee: Automated pipeline verification that uploads latest.yml and differential blockmaps to the release channel.',
       'Installer Polish: Customized NSIS wizard with folder selection, desktop shortcut creation, and run-after-finish options.',
       'Process Teardown Hardening: Enhanced taskkill process tree termination ensuring zero orphaned Python child processes.',
     ],
-    downloadUrl: 'https://github.com/LochanJangid/zero_sql/releases/download/v0.1.3/zero-sql-Setup-0.1.3-x64.exe',
+    downloadUrl: '/api/download',
   },
   {
     version: 'v0.1.2',
@@ -43,17 +42,17 @@ const RELEASES = [
       'Active Settings Wiring: Fully connected Monaco settings (word wrap, line numbers, cursor, ligatures, minimap) and table settings (null display, striped rows, screen-share mode).',
       'Multi-Resolution Icon: Generated crisp Windows ICO containing 16, 32, 48, 64, 128, and 256px mipmaps.',
     ],
-    downloadUrl: 'https://github.com/LochanJangid/zero_sql/releases/download/v0.1.2/zero-sql-Setup-0.1.2-x64.exe',
+    downloadUrl: '/download',
   },
   {
     version: 'v0.1.1',
     date: 'November 1, 2026',
     badge: 'Patch Release',
     highlights: [
-      'CI/CD alignment for Windows GitHub Actions runner.',
+      'CI/CD alignment for automated Windows build pipeline.',
       'Dependency updates across Vite, Monaco Editor, and PyInstaller spec.',
     ],
-    downloadUrl: 'https://github.com/LochanJangid/zero_sql/releases/tag/v0.1.1',
+    downloadUrl: '/download',
   },
   {
     version: 'v0.1.0',
@@ -66,7 +65,7 @@ const RELEASES = [
       'Local schema RAG engine with conversational SQL generation.',
       'Virtualized data table with TanStack Virtual supporting high-throughput query inspection.',
     ],
-    downloadUrl: 'https://github.com/LochanJangid/zero_sql/releases/tag/v0.1.0',
+    downloadUrl: '/download',
   },
 ];
 

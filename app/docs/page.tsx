@@ -182,7 +182,7 @@ export default function DocsPage() {
             </h2>
             <div className="p-5 rounded-2xl bg-[#141720] border border-amber-500/20 space-y-3 text-xs text-slate-300">
               <p className="leading-relaxed">
-                Because Zero-SQL is an independently built open-source application without an expensive commercial EV code-signing certificate, Windows SmartScreen may show a prompt saying &ldquo;Windows protected your PC&rdquo;.
+                Because Zero-SQL is an independently built desktop application without an expensive commercial EV code-signing certificate, Windows SmartScreen may show a prompt saying &ldquo;Windows protected your PC&rdquo;.
               </p>
               <div className="space-y-2 pl-4 border-l-2 border-amber-400">
                 <div>1. Click <strong>&ldquo;More info&rdquo;</strong> on the SmartScreen dialog.</div>
