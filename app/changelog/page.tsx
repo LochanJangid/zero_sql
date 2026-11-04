@@ -19,9 +19,34 @@ export const metadata = {
 
 const RELEASES = [
   {
+    version: 'v0.1.5',
+    date: 'November 4, 2026',
+    badge: 'Latest Release',
+    highlights: [
+      'Visual Workspace Sizing: 4-tier bottom panel presets (Small, Medium, Big, Full Screen) with instant restoration and clean full-panel mode.',
+      'Insightful Interactive Charts: Smart heuristic detection of categorical and numeric metrics with Bar, Line, Area, and Scatter plots plus instant KPI statistics.',
+      'Universal Connection Query & URI Support: Connect via host parameters or connection strings (mysql://, postgresql://, sqlite:///) with real-time parsing.',
+      'Monaco Pure SQL Isolation: Strict SQL extraction in editor, popup clarification dialogs, and auto-formatted clause newlines.',
+      'In-App Updates: On-demand check for updates dialog with progress bar, download, and restart & install directly from the desktop client.',
+    ],
+    downloadUrl: '/api/download',
+  },
+  {
+    version: 'v0.1.4',
+    date: 'November 4, 2026',
+    badge: 'Performance & Optimization',
+    highlights: [
+      'Pure-Python TF-IDF Engine: Replaced heavy ML packages with lightweight schema indexing, eliminating 388MB of native dependencies.',
+      '71% Size Reduction: Dropped installed disk footprint from 1GB down to 280MB with lightning-fast startup.',
+      'Optimized App Bundle: Modularized Monaco Editor and reduced app.asar from 182MB to 5.3MB.',
+      'Vercel Analytics: Integrated zero-cookie web privacy telemetry for website showcase.',
+    ],
+    downloadUrl: '/download',
+  },
+  {
     version: 'v0.1.3',
     date: 'November 2, 2026',
-    badge: 'Latest Release',
+    badge: 'Maintenance Release',
     highlights: [
       'Auto-Updater Resilience: Gracefully detects when the user is already on the latest version without surfacing 404 manifest errors.',
       'Release Manifest Guarantee: Automated pipeline verification that uploads latest.yml and differential blockmaps to the release channel.',

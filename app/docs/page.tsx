@@ -88,7 +88,7 @@ export default function DocsPage() {
               Installation & Requirements
             </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Zero-SQL is packaged as an automated Windows NSIS installer (<code className="text-emerald-300 font-mono text-xs">zero-sql-Setup-0.1.3-x64.exe</code>).
+              Zero-SQL is packaged as an automated Windows NSIS installer (<code className="text-emerald-300 font-mono text-xs">zero-sql-Setup.exe</code>).
               It ships with a fully frozen Python 3.12 backend compiled via PyInstaller, meaning <strong>no Python, Node.js, or pip installations are required on your PC</strong>.
             </p>
             <div className="p-4 rounded-xl bg-[#141720] border border-white/10 space-y-2 font-mono text-xs text-slate-300">
@@ -190,7 +190,7 @@ export default function DocsPage() {
                 <div>3. The NSIS installer will run, install Zero-SQL to your user directory, and create desktop/start-menu shortcuts.</div>
               </div>
               <p className="text-[11px] text-slate-400 pt-1 font-mono">
-                You can independently verify the installer SHA-256 hash using PowerShell: <code className="text-emerald-300">Get-FileHash zero-sql-Setup-0.1.3-x64.exe</code>
+                You can independently verify the installer SHA-256 hash using PowerShell: <code className="text-emerald-300">Get-FileHash .\zero-sql-Setup.exe</code>
               </p>
             </div>
           </section>

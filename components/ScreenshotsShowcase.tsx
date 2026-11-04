@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { 
   Sparkles, 
@@ -13,7 +13,9 @@ import {
   X, 
   Check, 
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft,
+  Search
 } from 'lucide-react';
 
 export interface ScreenshotItem {
@@ -192,7 +194,8 @@ export const SCREENSHOTS: ScreenshotItem[] = [
 
 export default function ScreenshotsShowcase() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [selectedScreenshot, setSelectedScreenshot] = useState<ScreenshotItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedScreenshotIndex, setSelectedScreenshotIndex] = useState<number | null>(null);
 
   const categories = [
     { id: 'all', label: 'All Screenshots', count: SCREENSHOTS.length },
@@ -203,20 +206,49 @@ export default function ScreenshotsShowcase() {
     { id: 'customization', label: 'AI & Settings', count: SCREENSHOTS.filter(s => s.category === 'customization').length },
   ];
 
-  const filteredScreenshots = activeCategory === 'all'
-    ? SCREENSHOTS
-    : SCREENSHOTS.filter(s => s.category === activeCategory);
+  const filteredScreenshots = useMemo(() => {
+    return SCREENSHOTS.filter((s) => {
+      const matchesCategory = activeCategory === 'all' || s.category === activeCategory;
+      const matchesSearch = !searchQuery.trim() || 
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.badge.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [activeCategory, searchQuery]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedScreenshotIndex === null) return;
+      if (e.key === 'Escape') {
+        setSelectedScreenshotIndex(null);
+      } else if (e.key === 'ArrowRight') {
+        setSelectedScreenshotIndex((prev) => 
+          prev !== null ? (prev + 1) % filteredScreenshots.length : 0
+        );
+      } else if (e.key === 'ArrowLeft') {
+        setSelectedScreenshotIndex((prev) => 
+          prev !== null ? (prev - 1 + filteredScreenshots.length) % filteredScreenshots.length : 0
+        );
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedScreenshotIndex, filteredScreenshots.length]);
+
+  const activeScreenshot = selectedScreenshotIndex !== null ? filteredScreenshots[selectedScreenshotIndex] : null;
 
   return (
-    <section id="screenshots" className="py-24 border-t border-white/5 bg-[#0a0b0e] relative overflow-hidden">
+    <section id="screenshots" className="py-24 border-t border-white/[0.08] bg-[#0a0b0e] relative overflow-hidden">
       {/* Background ambient light */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-r from-emerald-500/[0.08] via-teal-500/[0.04] to-blue-500/[0.08] rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10">
         
         {/* Section Heading */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wide uppercase">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Complete Visual Tour</span>
           </div>
@@ -229,38 +261,53 @@ export default function ScreenshotsShowcase() {
           </p>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                activeCategory === cat.id
-                  ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 scale-105'
-                  : 'bg-[#141720] hover:bg-[#1b202c] text-slate-400 hover:text-white border border-white/5'
-              }`}
-            >
-              <span>{cat.label}</span>
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                activeCategory === cat.id ? 'bg-slate-950/20 text-slate-950' : 'bg-white/10 text-slate-300'
-              }`}>
-                {cat.count}
-              </span>
-            </button>
-          ))}
+        {/* Filter Pills & Search Input Row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-6xl mx-auto">
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 p-1 bg-[#141722] rounded-2xl border border-white/[0.08]">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeCategory === cat.id
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                }`}
+              >
+                <span>{cat.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                  activeCategory === cat.id ? 'bg-slate-950/20 text-slate-950' : 'bg-white/10 text-slate-300'
+                }`}>
+                  {cat.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Search */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search views (e.g. Postgres, Chart, ERD)..."
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#141722] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+          </div>
         </div>
 
         {/* Screenshot Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-          {filteredScreenshots.map((item) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {filteredScreenshots.map((item, index) => (
             <div
               key={item.id}
-              onClick={() => setSelectedScreenshot(item)}
-              className="group rounded-2xl bg-[#12151e] border border-white/10 hover:border-emerald-500/50 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-xl hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/10"
+              onClick={() => setSelectedScreenshotIndex(index)}
+              className="group rounded-2xl bg-[#12151e] border border-white/[0.08] hover:border-emerald-500/40 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col shadow-xl hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/10"
             >
               {/* Image Container */}
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-950 border-b border-white/10">
+              <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-950 border-b border-white/[0.08]">
                 <Image
                   src={`/screenshots/${item.filename}`}
                   alt={item.title}
@@ -271,7 +318,7 @@ export default function ScreenshotsShowcase() {
                 
                 {/* Overlay Badge */}
                 <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-[11px] font-mono text-emerald-400 border border-white/10 shadow-sm font-semibold">
+                  <span className="px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-[10px] font-mono text-emerald-400 border border-white/10 shadow-sm font-semibold">
                     {item.badge}
                   </span>
                 </div>
@@ -288,10 +335,10 @@ export default function ScreenshotsShowcase() {
               {/* Text Context */}
               <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                 <div className="space-y-1.5">
-                  <div className="text-[11px] font-mono text-emerald-400/90 uppercase tracking-wider font-semibold">
+                  <div className="text-[10px] font-mono text-emerald-400/90 uppercase tracking-wider font-semibold">
                     {item.categoryLabel}
                   </div>
-                  <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
                     {item.title}
                   </h3>
                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
@@ -300,7 +347,7 @@ export default function ScreenshotsShowcase() {
                 </div>
 
                 {/* Highlights List */}
-                <div className="pt-2 border-t border-white/5 space-y-1">
+                <div className="pt-2 border-t border-white/[0.05] space-y-1">
                   {item.details.slice(0, 2).map((det, idx) => (
                     <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-300">
                       <Check className="w-3 h-3 text-emerald-400 shrink-0" />
@@ -316,9 +363,9 @@ export default function ScreenshotsShowcase() {
       </div>
 
       {/* Lightbox Modal on Screenshot Click */}
-      {selectedScreenshot && (
+      {activeScreenshot && selectedScreenshotIndex !== null && (
         <div 
-          onClick={() => setSelectedScreenshot(null)}
+          onClick={() => setSelectedScreenshotIndex(null)}
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md p-4 sm:p-8 flex items-center justify-center animate-in fade-in duration-200"
         >
           <div 
@@ -330,33 +377,55 @@ export default function ScreenshotsShowcase() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    {selectedScreenshot.badge}
+                    {activeScreenshot.badge}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
-                    {selectedScreenshot.categoryLabel}
+                    {activeScreenshot.categoryLabel} ({selectedScreenshotIndex + 1} of {filteredScreenshots.length})
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-white">
-                  {selectedScreenshot.title}
+                  {activeScreenshot.title}
                 </h3>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setSelectedScreenshot(null)}
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                title="Close preview"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedScreenshotIndex((prev) => 
+                    prev !== null ? (prev - 1 + filteredScreenshots.length) % filteredScreenshots.length : 0
+                  )}
+                  className="p-2 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  title="Previous (Left Arrow)"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedScreenshotIndex((prev) => 
+                    prev !== null ? (prev + 1) % filteredScreenshots.length : 0
+                  )}
+                  className="p-2 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  title="Next (Right Arrow)"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedScreenshotIndex(null)}
+                  className="p-2 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-colors cursor-pointer ml-2"
+                  title="Close (ESC)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Image Body */}
             <div className="relative flex-1 min-h-[300px] sm:min-h-[500px] bg-slate-950 overflow-auto p-2 sm:p-4 flex items-center justify-center">
               <div className="relative w-full h-[60vh] max-h-[700px]">
                 <Image
-                  src={`/screenshots/${selectedScreenshot.filename}`}
-                  alt={selectedScreenshot.title}
+                  src={`/screenshots/${activeScreenshot.filename}`}
+                  alt={activeScreenshot.title}
                   fill
                   className="object-contain"
                   sizes="90vw"
@@ -368,12 +437,12 @@ export default function ScreenshotsShowcase() {
             {/* Modal Footer Description */}
             <div className="px-6 py-4 bg-[#161a24] border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-                {selectedScreenshot.description}
+                {activeScreenshot.description}
               </p>
 
               <div className="flex items-center gap-2 shrink-0">
                 <a
-                  href={`/screenshots/${selectedScreenshot.filename}`}
+                  href={`/screenshots/${activeScreenshot.filename}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"

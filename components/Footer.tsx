@@ -78,7 +78,7 @@ export default function Footer() {
               <li>
                 <Link href="/changelog" className="hover:text-white transition-colors flex items-center gap-1">
                   Changelog
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1 py-0.2 rounded border border-emerald-500/20">v0.1.4</span>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1 py-0.2 rounded border border-emerald-500/20">v0.1.5</span>
                 </Link>
               </li>
             </ul>
@@ -143,11 +143,7 @@ export default function Footer() {
                   Lochan Jangid <ArrowUpRight className="w-3 h-3 text-slate-400" />
                 </a>
               </li>
-              <li>
-                <a href="https://github.com/LochanJangid/zero-sql" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1">
-                  GitHub Repository <ArrowUpRight className="w-3 h-3 text-slate-400" />
-                </a>
-              </li>
+
               <li>
                 <a href="https://lochan.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors inline-flex items-center gap-1">
                   Portfolio <ArrowUpRight className="w-3 h-3 text-slate-400" />

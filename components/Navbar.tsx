@@ -8,7 +8,6 @@ import {
   Menu, 
   X, 
   ExternalLink,
-  Github,
   Sparkles,
   ArrowRight
 } from 'lucide-react';
@@ -43,7 +42,7 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
       <div className="bg-[#0e1015] border-b border-white/[0.06] py-2 px-4 text-xs text-center text-slate-300 flex items-center justify-center gap-2 select-none">
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium text-[11px] border border-emerald-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          v0.1.4 Released
+          v0.1.5 Released
         </span>
         <span className="text-slate-400 hidden sm:inline">
           Standalone desktop installer with local AI SQL synthesis & zero telemetry.
@@ -80,7 +79,7 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
             <div className="flex items-baseline gap-2">
               <span className="font-extrabold text-base sm:text-lg text-white tracking-tight">Zero-SQL</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/10 text-slate-400">
-                v0.1.4
+                v0.1.5
               </span>
             </div>
           </Link>
@@ -100,16 +99,7 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
 
           {/* Right: GitHub & Windows Download CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <a
-              href="https://github.com/LochanJangid/zero-sql"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="View on GitHub"
-            >
-              <Github className="w-4 h-4" />
-              <span>GitHub</span>
-            </a>
+
 
             <Link
               href="/download"
@@ -159,15 +149,7 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
             </div>
 
             <div className="pt-3 border-t border-white/[0.08] flex items-center gap-3">
-              <a
-                href="https://github.com/LochanJangid/zero-sql"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2 rounded-xl bg-white/[0.05] border border-white/[0.08] text-center text-xs font-semibold text-slate-300 flex items-center justify-center gap-2"
-              >
-                <Github className="w-4 h-4" />
-                <span>GitHub</span>
-              </a>
+
 
               <Link
                 href="/download"

@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import ProductShowcase from '../components/ProductShowcase';
 import ScreenshotsShowcase from '../components/ScreenshotsShowcase';
+import ComparisonSection from '../components/ComparisonSection';
 import DesktopWindow from '../components/DesktopWindow';
 import FeatureStorytelling from '../components/FeatureStorytelling';
 import ArchitectureSection from '../components/ArchitectureSection';
@@ -32,7 +33,10 @@ export default function HomePage() {
       {/* 4. Complete Visual Tour & Screenshot Gallery (All 16 Views) */}
       <ScreenshotsShowcase />
 
-      {/* 5. Interactive Browser Sandbox Simulator (Live Studio Playground) */}
+      {/* 5. Competitive Comparison Matrix & Buyer Personas */}
+      <ComparisonSection />
+
+      {/* 6. Interactive Browser Sandbox Simulator (Live Studio Playground) */}
       <section id="demo" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/[0.08] bg-[#0c0d12]">
         <div className="text-center space-y-3 max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
@@ -48,25 +52,25 @@ export default function HomePage() {
         <DesktopWindow />
       </section>
 
-      {/* 6. Feature Deep-Dives & Storytelling */}
+      {/* 7. Feature Deep-Dives & Storytelling */}
       <FeatureStorytelling />
 
-      {/* 7. Technical Architecture (Zero Data Leakage Pipeline) */}
+      {/* 8. Technical Architecture (Zero Data Leakage Pipeline) */}
       <ArchitectureSection />
 
-      {/* 8. Enterprise Security & Cryptographic Checksums */}
+      {/* 9. Enterprise Security & Cryptographic Checksums */}
       <SecuritySection />
 
-      {/* 9. Frequently Asked Questions */}
+      {/* 10. Frequently Asked Questions */}
       <FaqSection />
 
-      {/* 10. High-Impact Bottom Download CTA */}
+      {/* 11. High-Impact Bottom Download CTA */}
       <DownloadCtaSection />
 
-      {/* 11. Creator Spotlight */}
+      {/* 12. Creator Spotlight */}
       <CreatorSection />
 
-      {/* 12. Developer Footer */}
+      {/* 13. Developer Footer */}
       <Footer />
     </div>
   );

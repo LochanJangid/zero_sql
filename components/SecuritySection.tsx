@@ -11,7 +11,10 @@ import {
   Terminal, 
   AlertTriangle,
   EyeOff,
-  Server
+  Server,
+  Cpu,
+  CheckCircle2,
+  Network
 } from 'lucide-react';
 
 const SHA256_V14 = '2fd29270fa3548aa3877f9bf9ea87ce130b8abb7b3f749dfe998763b74787ab6';
@@ -31,6 +34,29 @@ export default function SecuritySection() {
     setCopiedCmd(true);
     setTimeout(() => setCopiedCmd(false), 2000);
   };
+
+  const securitySpecs = [
+    {
+      title: 'Local Loopback Binding Only',
+      badge: '127.0.0.1',
+      description: 'The internal execution engine binds strictly to the local loopback interface with an ephemeral OS port and a cryptographically randomized auth token.',
+    },
+    {
+      title: 'Zero Plaintext Credential Storage',
+      badge: 'Protected Vault',
+      description: 'Passwords and connection tokens are never saved to plain text files. Recent connection histories record only host, database, and port targets.',
+    },
+    {
+      title: 'ContextIsolation & Process Sandbox',
+      badge: 'Electron 32',
+      description: 'The renderer process operates with contextIsolation: true and sandbox: true, eliminating remote code execution vulnerabilities.',
+    },
+    {
+      title: 'AST Mutation Rejection',
+      badge: 'Syntax Barrier',
+      description: 'In Safe Read-Only mode, the Abstract Syntax Tree parser rejects all DROP, TRUNCATE, DELETE, and ALTER statements before opening a transaction socket.',
+    },
+  ];
 
   return (
     <section id="security" className="py-24 border-t border-white/[0.08] bg-[#0a0b0e] relative overflow-hidden">
@@ -98,12 +124,28 @@ export default function SecuritySection() {
 
         </div>
 
+        {/* Technical Architecture Specs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {securitySpecs.map((s, idx) => (
+            <div key={idx} className="p-5 rounded-2xl bg-[#141722]/60 border border-white/[0.06] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  {s.badge}
+                </span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              </div>
+              <h4 className="text-sm font-bold text-white">{s.title}</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">{s.description}</p>
+            </div>
+          ))}
+        </div>
+
         {/* Checksum Verification Box */}
         <div className="rounded-2xl bg-[#141722] border border-white/[0.1] p-6 sm:p-8 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-mono text-emerald-400 uppercase font-semibold">Binary Cryptographic Hash</span>
-              <h3 className="text-base sm:text-lg font-bold text-white">Windows Release v0.1.4 (SHA-256 Digest)</h3>
+              <h3 className="text-base sm:text-lg font-bold text-white">Windows Release v0.1.5 (SHA-256 Digest)</h3>
             </div>
             <button
               type="button"

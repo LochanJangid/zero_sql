@@ -46,7 +46,7 @@ export default function DownloadCtaSection() {
             className="group inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm sm:text-base shadow-2xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Download className="w-5 h-5 stroke-[2.5] group-hover:-translate-y-0.5 transition-transform" />
-            <span>Download for Windows (v0.1.4)</span>
+            <span>Download for Windows (v0.1.5)</span>
           </Link>
 
           <Link
