@@ -3,6 +3,8 @@ import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DesktopWindow from '../components/DesktopWindow';
+import HeroScreenshotViewer from '../components/HeroScreenshotViewer';
+import ScreenshotsShowcase from '../components/ScreenshotsShowcase';
 import CreatorSection from '../components/CreatorSection';
 import { 
   Download, 
@@ -106,8 +108,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Section 3: Product Showcase (Centerpiece Desktop Studio) */}
+      {/* Section 3: Real App Screenshot Showcase at Starting */}
       <section className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <HeroScreenshotViewer />
+      </section>
+
+      {/* Section: Complete Visual Screenshot Gallery */}
+      <ScreenshotsShowcase />
+
+      {/* Section: Interactive Studio Sandbox Simulator */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10">
+          <div className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Interactive Preview</div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Try the Studio Simulation in Your Browser
+          </h2>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Test natural language SQL generation and schema exploration without installing anything.
+          </p>
+        </div>
         <DesktopWindow />
       </section>
 

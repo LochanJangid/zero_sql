@@ -32,7 +32,7 @@ export default function Navbar({ currentPath = '/' }: NavbarProps) {
       <div className="bg-[#12151c] border-b border-white/5 py-2 px-4 text-xs text-center text-slate-300 flex items-center justify-center gap-2">
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium text-[11px] border border-emerald-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          v0.1.3 Live
+          v0.1.4 Live
         </span>
         <span className="text-slate-400">
           Standalone Windows x64 installer with zero runtime dependencies & offline Python backend.
