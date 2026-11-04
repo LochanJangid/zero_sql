@@ -23,7 +23,7 @@ const SHA256_HASH_V13 = '2fd29270fa3548aa3877f9bf9ea87ce130b8abb7b3f749dfe998763
 
 export default function DownloadPage() {
   const [downloadUrl] = useState(DOWNLOAD_URL);
-  const [version] = useState('0.1.3');
+  const [version] = useState('0.1.4');
   const [copiedHash, setCopiedHash] = useState(false);
   const [copiedPs, setCopiedPs] = useState(false);
 
